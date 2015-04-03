@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <title>Hello Spring Boot!</title>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+        <link href="/css/bootstrap.min.css" th:href="@{/css/bootstrap.min.css}" rel="stylesheet" media="screen" />
+        <link href="/css/font-awesome-4.2.0/css/font-awesome.min.css" th:href="@{/css/font-awesome-4.2.0/css/font-awesome.min.css}" rel="stylesheet"/>
+        <link href="/css/split-pane.css" th:href="@{/css/split-pane.css}" rel="stylesheet" media="screen" />
+        <link href="/css/splitter.css" th:href="@{/css/splitter.css}" rel="stylesheet" media="screen" />
+        <link href="/css/style.css" th:href="@{/css/style.css}" rel="stylesheet" media="screen" />
+        <script src="/js/jquery-2.1.1.min.js" th:src="@{/js/jquery-2.1.1.min.js}"></script>
+        <script src="/js/bootstrap.min.js" th:src="@{/js/bootstrap.min.js}"></script>
+        <script src="/js/split-pane.js" th:src="@{/js/split-pane.js}"></script>
+        <script src="/js/summernote.min.js" th:src="@{/js/summernote.min.js}"></script>
+        <link href="/css/summernote.css" th:href="@{/css/summernote.css}" rel="stylesheet"/>
+        <script>
+            $(function () {
+                $('div.split-pane').splitPane();
+            });
+        </script>
+    </head>
+    <body>
+        <div align="center" id="header">
+            <p>Verzeichnis der Digitalisate: <input type="text" id="directory" name="directory" size="70"/></p>
+
+            <p><input class="btn btn-default" id="prev" type="button" value="Previous" /> <input class="input-sm" type="text" size="4" id="currentImage" name="currentImage" value="0"/> <input class="btn btn-default" id="next" type="button" value="Next" /></p>
+        </div>
+        <div class="split-pane-frame">
+            <div class="split-pane vertical-percent">
+                <div class="split-pane-component" id="left-component">
+                    <div class="decoration" id="displayResults"><!-- This div is added for styling purposes only. It's not part of the split-pane plugin. -->
+                        <img id="image" src="/img/0" width="100%"/>
+                    </div>
+                </div>
+                <div class="split-pane-divider" id="my-divider"></div>
+                <div class="split-pane-component" id="right-component">
+                    <div class="decoration"><!-- This div is added for styling purposes only. It's not part of the split-pane plugin. -->
+                        <div id="summernote">Hello Summernote</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script th:inline="javascript">
+            /*<![CDATA[*/
+            // size content
+            var headerHeight = $('#header').height();
+            var windowHeight = $(window).height();
+            $('.split-pane-frame').height(windowHeight - headerHeight - 60);
+
+            var currentPage = 0;
+            var directory;
+            loadImage(currentPage);
+            loadText(currentPage);
+            $('#currentImage').val(currentPage);
+
+            $("#next, #prev").click(function () {
+                directory = $('#directory').val();
+                currentPage = parseInt($('#currentImage').val());
+
+                var nextPage = ($(this).attr('id') == 'next') ? currentPage + 1 : currentPage - 1;
+                $('#currentImage').val(nextPage);
+                loadImage(nextPage);
+                saveHtml(directory, currentPage, $('#summernote').code());
+                loadText(nextPage);
+                currentPage = nextPage;
+            });
+
+            function loadImage(pageNumber) {
+                $('#image').attr('src', '/img/' + pageNumber);
+            }
+
+            function saveHtml(directory, pageNumber, html) {
+                var data = {
+                    directory: directory,
+                    id: pageNumber,
+                    html: html
+                };
+                $.ajax({
+                    url: '/text/' + pageNumber,
+                    data: data,
+                    type: 'POST',
+                    success: function (data, textStatus, jqXHR) {
+//                        alert("saved");
+                    }, error: function (data)
+                    {
+                        console.log('there is some error ' + data);
+                    }, failure: function (data) {
+                        console.log('there is some error ' + data);
+                    }
+                });
+            }
+
+            function loadText(pageNumber) {
+                $.ajax({
+                    url: '/text/' + pageNumber,
+                    data: 'directory=' + $('#directory').val(),
+                    type: 'GET',
+                    success: function (data) {
+                        $('#summernote').code(data);
+                    }, error: function (data)
+                    {
+                        console.log('there is some error ' + data);
+                    }, failure: function (data) {
+                        console.log('there is some error ' + data);
+                    }
+                });
+            }
+
+            $(document).ready(function () {
+                $('#summernote').summernote(
+                        {
+                            height: 600
+                        }
+                );
+
+                // fix modals behind dark backdrop
+                var checkeventcount = 1, prevTarget;
+                $('.modal').on('show.bs.modal', function (e) {
+                    if (typeof prevTarget == 'undefined' || (checkeventcount == 1 && e.target != prevTarget))
+                    {
+                        prevTarget = e.target;
+                        checkeventcount++;
+                        e.preventDefault();
+                        $(e.target).appendTo('body').modal('show');
+                    }
+                    else if (e.target == prevTarget && checkeventcount == 2)
+                    {
+                        checkeventcount--;
+                    }
+                });
+            });
+            /*]]>*/
+        </script>
+    </body>
+</html>
