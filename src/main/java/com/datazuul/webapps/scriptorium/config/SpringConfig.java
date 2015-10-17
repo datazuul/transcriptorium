@@ -11,6 +11,7 @@ import java.util.LinkedList;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
@@ -20,6 +21,7 @@ import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
  * @author Ralf Eichinger <ralf.eichinger@bsb-muenchen.de>
  */
 @Configuration
+@ComponentScan(basePackages = {"com.datazuul.webapps.scriptorium.frontend"})
 @PropertySource(value = {
     "classpath:/com/datazuul/webapps/scriptorium/config/SpringConfig-${spring.profiles.active:PROD}.properties"
 })
@@ -35,7 +37,7 @@ public class SpringConfig {
     @Value("${uploadFolder.path}")
     private String uploadFolderPath;
     
-    @Bean
+//    @Bean
     public ImageController getImageController() {
         List<ImageResolver> resolvers = new LinkedList<>();
         // Resolve bavarikon IDs without datastream IDs to the bavarikon Fedora URL of the ZOOM datastream

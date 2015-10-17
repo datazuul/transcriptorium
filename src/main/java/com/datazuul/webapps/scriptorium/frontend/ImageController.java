@@ -9,10 +9,18 @@ import com.datazuul.webapps.scriptorium.domain.exceptions.UnsupportedOperation;
 import com.datazuul.webapps.scriptorium.frontend.params.ParamParser;
 import com.datazuul.webapps.scriptorium.frontend.resolver.ImageResolver;
 import java.io.IOException;
+import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -22,16 +30,22 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.SessionAttributes;
 
 /**
  * Serves images
  *
  * @author Ralf Eichinger <ralf.eichinger@alexandria.de>
  */
-//@Controller
-@RequestMapping("/img")
+@Controller
+//@RequestMapping("/img")
+@SessionAttributes(value = {"images", "directory"})
 public class ImageController {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ImageController.class);
@@ -40,21 +54,79 @@ public class ImageController {
 //    private RedisTemplate redisTemplate;
     private List<ImageResolver> resolvers = Collections.emptyList();
 
-    @RequestMapping(value = {"/{identifier}"})
-    public ResponseEntity<byte[]> getImageRepresentation(@PathVariable String identifier) throws ResolvingException {
-        Path path = Paths.get("/home/ralf/DEV/SOURCES/de.alexandria--parent/docs/Achleitner_Arthur/Bayern_wie_es_war_und_ist-1/image-" + identifier + ".jpg");
-        byte[] readAllBytes = null;
-        try {
-            readAllBytes = Files.readAllBytes(path);
-        } catch (IOException e) {
-            throw new ResolvingException(path.toString(), e);
-        }
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.IMAGE_JPEG);
-        return new ResponseEntity<>(readAllBytes, headers, HttpStatus.OK);
+    @ModelAttribute("images")
+    public List<Path> getUserObject() {
+        return new ArrayList<>();
     }
 
-    @RequestMapping(value = {"/{identifier}.{format}"})
+    @RequestMapping(value = {"/edit"}, method = RequestMethod.GET)
+    String index() {
+        return "index";
+    }
+    
+    @RequestMapping(value = {"/edit"}, method = RequestMethod.POST)
+    public String loadDirectory(@RequestParam String directory, @ModelAttribute("images") List<Path> images, Model model) throws ResolvingException, URISyntaxException {
+        directory = cleanPath(directory);
+        if ((images.isEmpty()) && directory != null) {
+            Path imageDirectory = Paths.get(new URI("file:" + directory));
+            final List<Path> imageFiles = new ArrayList<>();
+            try {
+                Files.walkFileTree(imageDirectory, new SimpleFileVisitor<Path>() {
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                        if (!attrs.isDirectory()) {
+                            // TODO there must be a more elegant solution for filtering jpeg files...
+                            if (file.getFileName().toString().endsWith("jpg")) {
+                                imageFiles.add(file);
+                            }
+                        }
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            Collections.sort(imageFiles, new Comparator() {
+                @Override
+                public int compare(Object fileOne, Object fileTwo) {
+                    String filename1 = ((Path) fileOne).getFileName().toString();
+                    String filename2 = ((Path) fileTwo).getFileName().toString();
+
+                    try {
+                        Integer number1 = Integer.parseInt(filename1.substring(0, filename1.lastIndexOf(".")));
+                        Integer number2 = Integer.parseInt(filename2.substring(0, filename2.lastIndexOf(".")));
+                        return number1.compareTo(number2);
+                    } catch (NumberFormatException nfe) {
+                        return filename1.compareToIgnoreCase(filename2);
+                    }
+                }
+            });
+            images = imageFiles;
+            model.addAttribute("images", images);
+            model.addAttribute("directory", directory);
+        }
+        return "index";
+    }
+
+    @RequestMapping(value = {"/img/{index}"}, method = RequestMethod.GET)
+    public ResponseEntity<byte[]> getImageRepresentation(@PathVariable int index, @ModelAttribute("images") List<Path> images) throws ResolvingException, URISyntaxException {
+        try {
+            Path filePath = images.get(index);
+            byte[] readAllBytes = null;
+            try {
+                readAllBytes = Files.readAllBytes(filePath);
+            } catch (IOException e) {
+                throw new ResolvingException(filePath.toString(), e);
+            }
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.IMAGE_JPEG);
+            return new ResponseEntity<>(readAllBytes, headers, HttpStatus.OK);
+        } catch (IndexOutOfBoundsException e) {
+            return null;
+        }
+    }
+
+    @RequestMapping(value = {"/img/{identifier}.{format}"})
     public ResponseEntity<byte[]> getImageRepresentation(
             @PathVariable String identifier,
             @PathVariable String format,
@@ -175,5 +247,12 @@ public class ImageController {
 
     public void setResolvers(List<ImageResolver> resolvers) {
         this.resolvers = resolvers;
+    }
+
+    private String cleanPath(String directory) {
+        if (!directory.endsWith(File.separator)) {
+            directory = directory + File.separator;
+        }
+        return directory;
     }
 }
