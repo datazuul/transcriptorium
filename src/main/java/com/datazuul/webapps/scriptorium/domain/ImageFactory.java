@@ -6,9 +6,9 @@ import java.util.Set;
 
 public interface ImageFactory {
 
-    public Set<Formats> getSupportedInputFormats();
+  public Set<Formats> getSupportedInputFormats();
 
-    public Set<Formats> getSupportedOutputFormats();
+  public Set<Formats> getSupportedOutputFormats();
 
-    public Image getImage(byte[] imageData) throws UnsupportedFormat, IOException;
+  public Image getImage(byte[] imageData) throws UnsupportedFormat, IOException;
 }

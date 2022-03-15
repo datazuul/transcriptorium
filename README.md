@@ -1,12 +1,22 @@
-DEVELOPMENT
-===========
+# Transcriptorium
+
+Transcriptorium is a webapp for transcribing text on images by hand.
+The image (of a text) is shown side by side with the text input area.
+
+## Development
+
 Run: Run file "Application.java", http://localhost:10000/edit
-Verzeichnis der Digitalisate (jpg-files): /home/ralf/DEV/SOURCES/de.alexandria--parent/docs/Achleitner_Arthur/Bayern_wie_es_war_und_ist-1/
+
+Verzeichnis der Digitalisate (jpg-files):
+
+`/home/ralf/DEV/SOURCES/de.alexandria--parent/docs/Achleitner_Arthur/Bayern_wie_es_war_und_ist-1/`
 
 Path to html-files: Enter into input field
+
 Path to image-files: FIXME: fixed path to images:
 - ImageController: "/home/ralf/DEV/SOURCES/de.alexandria--parent/docs/Achleitner_Arthur/Bayern_wie_es_war_und_ist-1/image-" + identifier + ".jpg"
 
+## References
 
 - https://spring.io/guides/gs/spring-boot/
 - http://docs.spring.io/spring-boot/docs/current/reference/html/getting-started-first-application.html

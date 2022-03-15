@@ -8,13 +8,13 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * @author Ralf Eichinger <ralf.eichinger@alexandria.de>
  */
-@RestController // @ApiController combines @Controller and @ResponseBody: the method returns pure text
+@RestController // @ApiController combines @Controller and @ResponseBody: the method returns pure
+// text
 @RequestMapping("/api")
 public class ApiController {
 
-    @RequestMapping("/")
-    public String index() {
-        return "Greetings from Spring Boot!";
-    }
-
+  @RequestMapping("/")
+  public String index() {
+    return "Greetings from Spring Boot!";
+  }
 }

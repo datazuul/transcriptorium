@@ -1,0 +1,75 @@
+app:
+  httpRepository:
+    baseUrl: http://localhost:18080/repo
+  uploadFolder:
+    path: ~/.transcriptorium
+
+info:
+  app:
+    encoding: '@project.build.sourceEncoding@'
+    java:
+      source: '@maven.compiler.source@'
+      target: '@maven.compiler.target@'
+    project:
+      artifactId: '@project.artifactId@'
+      groupId: '@project.groupId@'
+      name: '@project.name@'
+      version: '@project.version@'
+      buildDetails: '@versionName@'
+
+management:
+  endpoint:
+    health:
+      show-details: when-authorized
+  endpoints:
+    web:
+      base-path: '/monitoring'
+      exposure:
+        include: '*'
+  info:
+    git:
+      mode: full
+  server:
+    add-application-context-header: false
+    port: 10001
+
+server:
+  port: 10000
+  server-header: "@project.name@ v@project.version@"
+
+spring:
+  profiles:
+    active: local
+  security:
+    user:
+      name: admin
+      password: secret
+      roles: ACTUATOR
+  messages:
+    cache-duration: 5
+    encoding: 'UTF-8'
+    fallback-to-system-locale: false
+
+---
+
+# PROD (diffs to default/local)
+management:
+  server:
+    port: 8091
+
+server:
+  error:
+    include-exception: false
+    include-stacktrace: 'never'
+  port: 8090
+
+spring:
+  config:
+    activate:
+      on-profile: PROD
+  security:
+    user:
+      name: jack
+      password: invisible
+      roles: ACTUATOR
+
